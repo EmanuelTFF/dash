@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard de Moedas Virtuais</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Orbitron', sans-serif;
+      background: linear-gradient(120deg, #1e1e2f, #2b2b4f);
+      color: #fff;
+      overflow: hidden;
+    }
+
+    .container {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 20px;
+      padding: 20px;
+    }
+
+    .card {
+      background: #2d2d4e;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .card:hover {
+      transform: scale(1.05);
+      box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
+    }
+
+    canvas {
+      width: 100%;
+      max-height: 300px;
+    }
+
+    .header {
+      text-align: center;
+      padding: 20px;
+    }
+
+    .header h1 {
+      font-size: 2.5rem;
+      color: #f9a825;
+      overflow: hidden;
+      white-space: nowrap;
+      border-right: 3px solid orange;
+      width: fit-content;
+      margin: 0 auto;
+      animation: typing 3s steps(30, end), blink 0.5s step-end infinite alternate;
+    }
+
+    @keyframes typing {
+      from { width: 0; }
+      to { width: 100%; }
+    }
+
+    @keyframes blink {
+      from { border-color: transparent; }
+      to { border-color: orange; }
+    }
+
+    .input-container {
+      text-align: center;
+      margin: 20px;
+    }
+
+    .input-container select, .input-container button {
+      padding: 10px;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+    }
+
+    .input-container select {
+      background-color: #444;
+      color: #fff;
+    }
+
+    .input-container button {
+      margin-left: 10px;
+      background-color: #534caf;
+      color: #fff;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+
+    .input-container button:hover {
+      background-color: #5445a0;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>Dashboard </h1>
+  </div>
+
+  <div class="input-container">
+    <select id="currencySelect">
+      <option value="bitcoin">Bitcoin (BTC)</option>
+      <option value="ethereum">Ethereum (ETH)</option>
+      <option value="binancecoin">Binance Coin (BNB)</option>
+      <option value="cardano">Cardano (ADA)</option>
+      <option value="solana">Solana (SOL)</option>
+      <option value="dogecoin">Dogecoin (DOGE)</option>
+      <option value="polkadot">Polkadot (DOT)</option>
+      <option value="litecoin">Litecoin (LTC)</option>
+    </select>
+    <button onclick="updateChart()">Atualizar</button>
+  </div>
+
+  <div class="container">
+    <div class="card">
+      <canvas id="cryptoChart"></canvas>
+    </div>
+  </div>
+
+  <script>
+    // Fetch data from a cryptocurrency API
+    async function fetchCryptoData(base) {
+      const API_URL = `https://api.coingecko.com/api/v3/simple/price?ids=${base}&vs_currencies=usd,eur,brl`;
+      try {
+        const response = await fetch(API_URL);
+        const data = await response.json();
+        return data;
+      } catch (error) {
+        console.error('Erro ao buscar dados de moedas:', error);
+        return null;
+      }
+    }
+
+    let chart;
+
+    async function initCryptoChart(base = 'bitcoin') {
+      const data = await fetchCryptoData(base);
+
+      if (!data) {
+        alert('Falha ao carregar os dados. Por favor, tente novamente mais tarde.');
+        return;
+      }
+
+      const rates = data[base];
+      const labels = Object.keys(rates);
+      const values = Object.values(rates);
+
+      const ctx = document.getElementById('cryptoChart').getContext('2d');
+
+      if (chart) {
+        chart.destroy();
+      }
+
+      chart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: `Valores da moeda (${base.toUpperCase()})`,
+            data: values,
+            backgroundColor: ['#ff6384', '#36a2eb', '#ffcd56'],
+            borderWidth: 1
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: { display: true },
+          },
+          scales: {
+            y: {
+              beginAtZero: true
+            }
+          }
+        }
+      });
+
+      // GSAP Animations
+      gsap.from('.card', {
+        opacity: 0,
+        y: 50,
+        duration: 0.8,
+        stagger: 0.3
+      });
+    }
+
+    function updateChart() {
+      const select = document.getElementById('currencySelect');
+      const selectedCurrency = select.value;
+      initCryptoChart(selectedCurrency);
+    }
+
+    // Initialize with default cryptocurrency
+    initCryptoChart('bitcoin');
+  </script>
+</body>
+</html>
